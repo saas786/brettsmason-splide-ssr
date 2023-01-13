@@ -1,8 +1,51 @@
 import ServerSideRender from '@wordpress/server-side-render';
 import { useEffect } from '@wordpress/element';
 import Splide from '@splidejs/splide';
+import {
+	Spinner,
+} from '@wordpress/components';
 
 import './editor.css';
+
+const TriggerWhenLoadingFinished = props => {
+
+	return ( {children, showLoader} ) => {
+		useEffect( () => {
+			// Call action when the loading component unmounts because loading is finished.
+			return () => {
+				const slider = document.querySelector(`#block-${props.clientId} .splide`);
+				if ( slider ) {
+					const splide = new Splide( slider, {
+						type   : 'slide',
+						perPage: 1,
+						rewind : true,
+					} ).mount();
+				}
+			};
+		} );
+
+		return (
+			<div style={{position: 'relative'}}>
+				{showLoader && (
+					<div
+						style={{
+							position: 'absolute',
+							top: '50%',
+							left: '50%',
+							marginTop: '-9px',
+							marginLeft: '-9px',
+						}}
+					>
+						<Spinner />
+					</div>
+				)}
+				<div style={{opacity: showLoader ? '0.3' : 1}}>
+					{children}
+				</div>
+			</div>
+		);
+	};
+};
 
 /**
  * The edit function describes the structure of your block in the context of the
@@ -16,13 +59,10 @@ import './editor.css';
  *
  *
  */
-export default function Edit({ clientId, attributes: { splide } }) {
-	useEffect(() => {
-		const splide = new Splide(`#block-${clientId}`);
-		splide.mount();
-	}, []);
-
+export default function Edit( props ) {
 	return (
-		<ServerSideRender block="pulsar/team-carousel" attributes={splide} />
+		<div id={`block-${props.clientId}`}>
+			<ServerSideRender LoadingResponsePlaceholder={TriggerWhenLoadingFinished( props )} block="pulsar/team-carousel" attributes={ props.attributes } />
+		</div>
 	);
 }
